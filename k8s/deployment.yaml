@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: claude-code-ui
+  namespace: default
+  labels:
+    app: claude-code-ui
+spec:
+  replicas: 1  # Single replica due to SQLite database
+  selector:
+    matchLabels:
+      app: claude-code-ui
+  strategy:
+    type: Recreate  # Recreate strategy for SQLite to avoid concurrent access
+  template:
+    metadata:
+      labels:
+        app: claude-code-ui
+    spec:
+      containers:
+      - name: claude-code-ui
+        image: your-registry/claude-code-ui:latest  # Replace with your actual image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+          name: http
+          protocol: TCP
+
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: claude-code-ui-config
+
+        # Sensitive environment variables from Secret
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            secretKeyRef:
+              name: claude-code-ui-secret
+              key: AWS_REGION
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: claude-code-ui-secret
+              key: AWS_ACCESS_KEY_ID
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: claude-code-ui-secret
+              key: AWS_SECRET_ACCESS_KEY
+        # Optional: Uncomment if using session token
+        # - name: AWS_SESSION_TOKEN
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: claude-code-ui-secret
+        #       key: AWS_SESSION_TOKEN
+        #       optional: true
+        # Optional: Uncomment if using LLM Gateway
+        # - name: ANTHROPIC_BEDROCK_BASE_URL
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: claude-code-ui-secret
+        #       key: ANTHROPIC_BEDROCK_BASE_URL
+        #       optional: true
+        # - name: CLAUDE_CODE_SKIP_BEDROCK_AUTH
+        #   valueFrom:
+        #     secretKeyRef:
+        #       name: claude-code-ui-secret
+        #       key: CLAUDE_CODE_SKIP_BEDROCK_AUTH
+        #       optional: true
+
+        # Volume mounts
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+        - name: projects
+          mountPath: /app/projects
+
+        # Resource limits and requests
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      # Volumes
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: claude-code-ui-data
+      - name: projects
+        persistentVolumeClaim:
+          claimName: claude-code-ui-projects
+
+      # Optional: Image pull secrets if using private registry
+      # imagePullSecrets:
+      # - name: registry-secret
+
+      # Security context
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsNonRoot: true

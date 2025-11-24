@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  claude-code-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claude-code-ui
+    ports:
+      - "3001:3001"
+    environment:
+      # Server configuration
+      - PORT=3001
+      - NODE_ENV=production
+
+      # AWS Bedrock configuration
+      - CLAUDE_CODE_USE_BEDROCK=1
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+
+      # AWS Credentials (use environment variables or .env file)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+      # Optional: Session token for temporary credentials
+      # - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+
+      # Optional: Bedrock base URL for LLM Gateway
+      # - ANTHROPIC_BEDROCK_BASE_URL=${ANTHROPIC_BEDROCK_BASE_URL}
+      # - CLAUDE_CODE_SKIP_BEDROCK_AUTH=1
+
+      # Optional: Corporate proxy
+      # - HTTPS_PROXY=${HTTPS_PROXY}
+
+      # Database configuration
+      - DATABASE_PATH=/app/data/auth.db
+
+      # Context window
+      - CONTEXT_WINDOW=160000
+      - VITE_CONTEXT_WINDOW=160000
+
+    volumes:
+      # Persist database
+      - ./data:/app/data
+
+      # Mount projects directory
+      - ./projects:/app/projects
+
+      # Optional: Mount AWS credentials from host
+      # - ~/.aws:/root/.aws:ro
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Optional: Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+# Optional: Create named volumes
+volumes:
+  claude-data:
+    driver: local
+  claude-projects:
+    driver: local

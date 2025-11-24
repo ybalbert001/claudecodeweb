@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: claude-code-ui
+  namespace: default
+  labels:
+    app: claude-code-ui
+  annotations:
+    # Nginx ingress annotations
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+
+    # WebSocket support
+    nginx.ingress.kubernetes.io/websocket-services: "claude-code-ui"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+
+    # SSL/TLS (uncomment if using cert-manager)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+    # Alternative for AWS ALB Ingress Controller
+    # alb.ingress.kubernetes.io/scheme: internet-facing
+    # alb.ingress.kubernetes.io/target-type: ip
+    # alb.ingress.kubernetes.io/backend-protocol: HTTP
+    # alb.ingress.kubernetes.io/healthcheck-path: /health
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:region:account:certificate/xxxxx
+
+spec:
+  ingressClassName: nginx  # Change based on your ingress controller
+  rules:
+  - host: claude-code-ui.example.com  # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: claude-code-ui
+            port:
+              number: 80
+
+  # Uncomment for TLS/SSL
+  # tls:
+  # - hosts:
+  #   - claude-code-ui.example.com
+  #   secretName: claude-code-ui-tls

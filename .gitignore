@@ -1,0 +1,42 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Data directories
+data/
+projects/
+
+# Kubernetes secrets (contains sensitive credentials)
+k8s/secret.yaml
+
+# Submodule - claudecodeui
+claudecodeui/
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Cache and binaries
+_logs/
+_npx/
+bin/
+_cacache/
+lib/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
