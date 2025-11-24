@@ -1,0 +1,3 @@
+[submodule "claudecodeui"]
+	path = claudecodeui
+	url = https://github.com/siteboon/claudecodeui
