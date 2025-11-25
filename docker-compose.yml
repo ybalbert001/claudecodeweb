@@ -5,24 +5,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: claude-code-ui
+    container_name: claude-code-ui-${USERNAME:-default}
     ports:
-      - "3001:3001"
+      - "${PORT:-3001}:3001"
     environment:
       # Server configuration
       - PORT=3001
       - NODE_ENV=production
 
-      # AWS Bedrock configuration
+      # AWS Bedrock configuration (automatically set)
       - CLAUDE_CODE_USE_BEDROCK=1
-      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_REGION=us-east-1
 
       # AWS Credentials (use environment variables or .env file)
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
       # Optional: Session token for temporary credentials
-      # - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
 
       # Optional: Bedrock base URL for LLM Gateway
       # - ANTHROPIC_BEDROCK_BASE_URL=${ANTHROPIC_BEDROCK_BASE_URL}
@@ -31,22 +31,34 @@ services:
       # Optional: Corporate proxy
       # - HTTPS_PROXY=${HTTPS_PROXY}
 
-      # Database configuration
-      - DATABASE_PATH=/app/data/auth.db
+      # Database configuration (per user)
+      - DATABASE_PATH=/app/data/${USERNAME:-default}/auth.db
+
+      # Workspace configuration (per user)
+      - WORKSPACES_ROOT=/workspace
 
       # Context window
       - CONTEXT_WINDOW=160000
       - VITE_CONTEXT_WINDOW=160000
 
+      # User configuration
+      - USERNAME=${USERNAME:-default}
+
     volumes:
-      # Persist database
-      - ./data:/app/data
+      # Persist database per user
+      - ./data/${USERNAME:-default}:/app/data/${USERNAME:-default}
 
-      # Mount projects directory
-      - ./projects:/app/projects
+      # Mount user-specific workspace from EC2 local disk
+      - /home/ubuntu/cc-user/${USERNAME:-default}:/workspace
 
-      # Optional: Mount AWS credentials from host
-      # - ~/.aws:/root/.aws:ro
+      # Mount host workspace directories (optional)
+      - /home/ubuntu:/home/ubuntu
+
+      # Optional: Mount AWS credentials from host (updated for node user)
+      # - ~/.aws:/home/node/.aws:ro
+
+    # Run as node user (uid=1000, gid=1000) to match host ubuntu user
+    user: "1000:1000"
 
     restart: unless-stopped
 
