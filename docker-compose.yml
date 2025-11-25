@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: claude-code-ui-${USERNAME:-default}
     ports:
-      - "${PORT:-3001}:3001"
+      - "${PORT:-3002}:3001"
     environment:
       # Server configuration
       - PORT=3001
@@ -35,7 +35,7 @@ services:
       - DATABASE_PATH=/app/data/${USERNAME:-default}/auth.db
 
       # Workspace configuration (per user)
-      - WORKSPACES_ROOT=/workspace
+      - WORKSPACES_ROOT=/home/node/workspace
 
       # Context window
       - CONTEXT_WINDOW=160000
@@ -48,8 +48,8 @@ services:
       # Persist database per user
       - ./data/${USERNAME:-default}:/app/data/${USERNAME:-default}
 
-      # Mount user-specific workspace from EC2 local disk
-      - /home/ubuntu/cc-user/${USERNAME:-default}:/workspace
+      # Mount user-specific workspace from EC2 local disk to node user home
+      - /home/ubuntu/cc-user/${USERNAME:-default}:/home/node/workspace
 
       # Mount host workspace directories (optional)
       - /home/ubuntu:/home/ubuntu

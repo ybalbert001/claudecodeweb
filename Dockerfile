@@ -59,16 +59,10 @@ RUN mkdir -p /home/node/.claude/skills
 # Install Claude Code and add to PATH (installed as root, will be moved to node user)
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Configure Claude Code permissions (bypass for Docker environment)
+# Configure Claude Code default settings (bypass for Docker environment)
 # Official docs: https://code.claude.com/docs/en/settings
-RUN mkdir -p /home/node/.claude && \
-    cat > /home/node/.claude/settings.json <<'EOF'
-{
-  "permissions": {
-    "defaultMode": "bypassPermissions"
-  }
-}
-EOF
+RUN mkdir -p /home/node/.claude
+COPY claude-settings/settings.json /home/node/.claude/settings.json
 
 # Install skills from repositories
 WORKDIR /tmp
