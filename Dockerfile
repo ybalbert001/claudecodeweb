@@ -79,18 +79,10 @@ RUN git clone https://github.com/anthropics/skills.git anthropics-skills && \
     fi && \
     rm -rf anthropics-skills
 
-# Clone and install ybalbert001/claude-code-aws-skills
+# Clone and install ybalbert001/claude-code-aws-skills (includes excalidraw)
 RUN git clone https://github.com/ybalbert001/claude-code-aws-skills.git aws-skills && \
     cp -r aws-skills/* /home/node/.claude/skills/ && \
     rm -rf aws-skills
-
-# Clone and install excalidraw skill
-RUN git clone --depth 1 --filter=blob:none --sparse https://github.com/ryanquinn3/dotfiles.git && \
-    cd dotfiles && \
-    git sparse-checkout set claude/.claude/skills/excalidraw && \
-    cp -r claude/.claude/skills/excalidraw /home/node/.claude/skills/ && \
-    cd .. && \
-    rm -rf dotfiles
 
 # Install Python dependencies for all skills
 RUN find /home/node/.claude/skills -name "requirements.txt" -exec pip3 install --break-system-packages -r {} \; || true
