@@ -1,3 +1,3 @@
 [submodule "claudecodeui"]
 	path = claudecodeui
-	url = https://github.com/siteboon/claudecodeui
+	url = git@github.com:ybalbert001/claudecodeui.git
