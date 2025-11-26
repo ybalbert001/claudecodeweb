@@ -28,6 +28,7 @@ RUN npm run build
 FROM node:20-alpine
 
 # Install runtime and build dependencies
+# Including dependencies for Playwright/Chromium (excalidraw PNG export)
 RUN apk add --no-cache \
     sqlite \
     git \
@@ -36,7 +37,13 @@ RUN apk add --no-cache \
     py3-pip \
     make \
     g++ \
-    bash
+    bash \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 WORKDIR /app
 
@@ -91,6 +98,15 @@ RUN find /home/node/.claude/skills -name "requirements.txt" -exec pip3 install -
 RUN for dir in $(find /home/node/.claude/skills -name "package.json" -type f); do \
         cd "$(dirname "$dir")" && npm install || true; \
     done
+
+# Install Playwright Chromium for excalidraw PNG export
+# Set Playwright to use system-installed Chromium
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
+        cd /home/node/.claude/skills/excalidraw/scripts && \
+        npx playwright install chromium --with-deps || true; \
+    fi
 
 # Set environment variables for Bedrock
 ENV CLAUDE_CODE_USE_BEDROCK=1
