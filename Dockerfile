@@ -122,7 +122,9 @@ WORKDIR /app
 RUN mkdir -p /home/node/.local && \
     cp -r /root/.local/share /home/node/.local/ 2>/dev/null || true && \
     mkdir -p /home/node/.local/bin && \
-    ln -s /home/node/.local/share/claude/versions/2.0.53 /home/node/.local/bin/claude
+    # Find the actual installed version and create symlink to the claude executable
+    CLAUDE_VERSION=$(ls /home/node/.local/share/claude/versions/ | head -n 1) && \
+    ln -s /home/node/.local/share/claude/versions/${CLAUDE_VERSION}/claude /home/node/.local/bin/claude
 
 # Change ownership of all necessary directories to node user
 RUN chown -R node:node /app && \
