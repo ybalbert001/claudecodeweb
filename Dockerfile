@@ -1,14 +1,14 @@
 # Multi-stage build for Claude Code UI with Bedrock support
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 # Install build dependencies for native modules (better-sqlite3, bcrypt)
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
     g++ \
     gcc \
-    libc-dev \
-    sqlite-dev
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -25,25 +25,20 @@ COPY claudecodeui/ .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
 # Install runtime and build dependencies
-# Including dependencies for Playwright/Chromium (excalidraw PNG export)
-RUN apk add --no-cache \
-    sqlite \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sqlite3 \
     git \
     curl \
     python3 \
-    py3-pip \
+    python3-pip \
     make \
     g++ \
-    bash \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
     ca-certificates \
-    ttf-freefont
+    fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -63,11 +58,7 @@ RUN mkdir -p /app/data /app/projects
 # Create Claude skills directory (will be used by node user)
 RUN mkdir -p /home/node/.claude/skills
 
-# Install Claude Code and add to PATH (installed as root, will be moved to node user)
-RUN curl -fsSL https://claude.ai/install.sh | bash
-
 # Configure Claude Code default settings (bypass for Docker environment)
-# Official docs: https://code.claude.com/docs/en/settings
 RUN mkdir -p /home/node/.claude
 COPY claude-settings/settings.json /home/node/.claude/settings.json
 
@@ -76,11 +67,8 @@ WORKDIR /tmp
 
 # Clone and install anthropics/skills
 RUN git clone https://github.com/anthropics/skills.git anthropics-skills && \
-    # Copy top-level skills
     find anthropics-skills -maxdepth 1 -type d ! -name ".*" ! -name "anthropics-skills" ! -name "document-skills" -exec cp -r {} /home/node/.claude/skills/ \; && \
-    # Copy files from top level
     find anthropics-skills -maxdepth 1 -type f -exec cp {} /home/node/.claude/skills/ \; 2>/dev/null || true && \
-    # Copy skills from document-skills subdirectory to root level
     if [ -d "anthropics-skills/document-skills" ]; then \
         find anthropics-skills/document-skills -maxdepth 1 -type d ! -name ".*" ! -name "document-skills" -exec cp -r {} /home/node/.claude/skills/ \; ; \
     fi && \
@@ -100,9 +88,6 @@ RUN for dir in $(find /home/node/.claude/skills -name "package.json" -type f); d
     done
 
 # Install Playwright Chromium for excalidraw PNG export
-# Set Playwright to use system-installed Chromium
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
         cd /home/node/.claude/skills/excalidraw/scripts && \
         npx playwright install chromium --with-deps || true; \
@@ -112,39 +97,25 @@ RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
 ENV CLAUDE_CODE_USE_BEDROCK=1
 ENV AWS_REGION=us-east-1
 ENV NODE_ENV=production
-
-# Port configuration (can be overridden by docker-compose)
 ENV PORT=3001
 
 WORKDIR /app
 
-# Move Claude Code from root to node user's home and fix symlinks
-RUN mkdir -p /home/node/.local && \
-    cp -r /root/.local/share /home/node/.local/ 2>/dev/null || true && \
-    mkdir -p /home/node/.local/bin && \
-    # Find the actual installed version and create symlink to the claude executable
-    CLAUDE_VERSION=$(ls /home/node/.local/share/claude/versions/ | head -n 1) && \
-    ln -s /home/node/.local/share/claude/versions/${CLAUDE_VERSION}/claude /home/node/.local/bin/claude
-
 # Change ownership of all necessary directories to node user
 RUN chown -R node:node /app && \
-    chown -R node:node /home/node/.claude && \
-    chown -R node:node /home/node/.local
+    chown -R node:node /home/node/.claude
 
 # Set HOME and PATH for node user
 ENV HOME=/home/node
 ENV PATH="/home/node/.local/bin:${PATH}"
 
-# Switch to node user
+# Switch to node user and install Claude Code
 USER node
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
-# Expose port (using PORT environment variable)
-# Note: EXPOSE doesn't support environment variables directly, but the app uses $PORT
 EXPOSE 3001
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3001/health || exit 1
 
-# Start server
 CMD ["node", "server/index.js"]
