@@ -18,11 +18,11 @@ services:
       - AWS_REGION=us-east-1
 
       # AWS Credentials (use environment variables or .env file)
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
 
       # Optional: Session token for temporary credentials
-      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      # - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
 
       # Optional: Bedrock base URL for LLM Gateway
       # - ANTHROPIC_BEDROCK_BASE_URL=${ANTHROPIC_BEDROCK_BASE_URL}
@@ -32,7 +32,7 @@ services:
       # - HTTPS_PROXY=${HTTPS_PROXY}
 
       # Database configuration (per user)
-      - DATABASE_PATH=/app/data/${USERNAME:-default}/auth.db
+      - DATABASE_PATH=/home/node/${USERNAME:-default}/auth.db
 
       # Workspace configuration (per user)
       - WORKSPACES_ROOT=/home/node/workspace
