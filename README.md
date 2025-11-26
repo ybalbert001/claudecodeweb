@@ -28,6 +28,12 @@
 
 ## 快速开始
 
+### 下载本项目
+
+```bash
+git clone --recurse-submodules https://github.com/ybalbert001/claudecodeweb.git
+```
+
 ### 本地测试（Docker Compose）
 
 ```bash
