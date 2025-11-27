@@ -87,10 +87,9 @@ RUN for dir in $(find /home/node/.claude/skills -name "package.json" -type f); d
         cd "$(dirname "$dir")" && npm install || true; \
     done
 
-# Install Playwright Chromium for excalidraw PNG export
+# Install Playwright Chromium for excalidraw PNG export (Python version)
 RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
-        cd /home/node/.claude/skills/excalidraw/scripts && \
-        npx playwright install chromium --with-deps || true; \
+        python3 -m playwright install chromium --with-deps || true; \
     fi
 
 # Set environment variables for Bedrock
