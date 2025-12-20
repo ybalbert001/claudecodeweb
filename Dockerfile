@@ -88,6 +88,15 @@ RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
         python3 -m playwright install chromium --with-deps || true; \
     fi
 
+# Install Slidev CLI and Playwright for slidev-ppt skill
+RUN npm install -g @slidev/cli playwright-chromium && \
+    npx playwright install chromium --with-deps || true
+
+# Install AWS dark theme dependencies for slidev-ppt
+RUN if [ -d "/home/node/.claude/skills/slidev-ppt/themes/aws-dark" ]; then \
+        cd /home/node/.claude/skills/slidev-ppt/themes/aws-dark && npm install || true; \
+    fi
+
 # Set environment variables for Bedrock
 ENV CLAUDE_CODE_USE_BEDROCK=1
 ENV AWS_REGION=us-east-1
