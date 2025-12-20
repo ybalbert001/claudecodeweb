@@ -117,7 +117,7 @@ USER node
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Install Playwright for Slidev export (must be after USER node)
-RUN npx playwright install chromium
+RUN npm install -g playwright-chromium && npx playwright install chromium
 
 EXPOSE 3001
 
