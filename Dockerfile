@@ -66,13 +66,9 @@ COPY claude-settings/settings.json /home/node/.claude/settings.json
 WORKDIR /tmp
 
 # Clone and install anthropics/skills
-RUN git clone https://github.com/anthropics/skills.git anthropics-skills && \
-    find anthropics-skills -maxdepth 1 -type d ! -name ".*" ! -name "anthropics-skills" ! -name "document-skills" -exec cp -r {} /home/node/.claude/skills/ \; && \
-    find anthropics-skills -maxdepth 1 -type f -exec cp {} /home/node/.claude/skills/ \; 2>/dev/null || true && \
-    if [ -d "anthropics-skills/document-skills" ]; then \
-        find anthropics-skills/document-skills -maxdepth 1 -type d ! -name ".*" ! -name "document-skills" -exec cp -r {} /home/node/.claude/skills/ \; ; \
-    fi && \
-    rm -rf anthropics-skills
+RUN git clone --depth 1 https://github.com/anthropics/skills.git && \
+    cp -r skills/skills/* /home/node/.claude/skills/ && \
+    rm -rf skills
 
 # Clone and install ybalbert001/claude-code-aws-skills (includes excalidraw)
 RUN git clone https://github.com/ybalbert001/claude-code-aws-skills.git aws-skills && \
