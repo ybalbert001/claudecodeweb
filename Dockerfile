@@ -88,9 +88,8 @@ RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
         python3 -m playwright install chromium --with-deps || true; \
     fi
 
-# Install Slidev CLI and Playwright for slidev-ppt skill
-RUN npm install -g @slidev/cli && \
-    npx playwright install chromium --with-deps || true
+# Install Slidev CLI globally
+RUN npm install -g @slidev/cli
 
 # Install AWS dark theme dependencies for slidev-ppt
 RUN if [ -d "/home/node/.claude/skills/slidev-ppt/themes/aws-dark" ]; then \
@@ -116,6 +115,9 @@ ENV PATH="/home/node/.local/bin:${PATH}"
 # Switch to node user and install Claude Code
 USER node
 RUN curl -fsSL https://claude.ai/install.sh | bash
+
+# Install Playwright for Slidev export (must be after USER node)
+RUN npx playwright install chromium
 
 EXPOSE 3001
 
