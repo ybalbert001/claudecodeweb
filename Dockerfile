@@ -89,7 +89,7 @@ RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
     fi
 
 # Install Slidev CLI and Playwright for slidev-ppt skill
-RUN npm install -g @slidev/cli playwright-chromium && \
+RUN npm install -g @slidev/cli && \
     npx playwright install chromium --with-deps || true
 
 # Install AWS dark theme dependencies for slidev-ppt
