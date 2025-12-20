@@ -61,6 +61,9 @@ services:
     user: "1000:1000"
 
     restart: unless-stopped
+    
+    # Shared memory size for Chromium/Playwright (required for PDF export)
+    shm_size: '256m'
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
