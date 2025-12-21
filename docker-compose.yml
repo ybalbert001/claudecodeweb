@@ -35,7 +35,7 @@ services:
       - DATABASE_PATH=/home/node/${USERNAME:-default}/auth.db
 
       # Workspace configuration (per user)
-      - WORKSPACES_ROOT=/home/node/workspace
+      - WORKSPACES_ROOT=/root/workspace
 
       # Context window
       - CONTEXT_WINDOW=160000
@@ -49,7 +49,7 @@ services:
       - ./data/${USERNAME:-default}:/app/data/${USERNAME:-default}
 
       # Mount user-specific workspace from EC2 local disk to node user home
-      - /home/ubuntu/cc-user/${USERNAME:-default}:/home/node/workspace
+      - /home/ubuntu/cc-user/${USERNAME:-default}:/root/workspace
 
       # Mount host workspace directories (optional)
       - /home/ubuntu:/home/ubuntu
@@ -58,7 +58,6 @@ services:
       # - ~/.aws:/home/node/.aws:ro
 
     # Run as node user (uid=1000, gid=1000) to match host ubuntu user
-    user: "1000:1000"
 
     restart: unless-stopped
     

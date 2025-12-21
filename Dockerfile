@@ -1,5 +1,5 @@
 # Multi-stage build for Claude Code UI with Bedrock support
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 # Install build dependencies for native modules (better-sqlite3, bcrypt)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -25,7 +25,7 @@ COPY claudecodeui/ .
 RUN npm run build
 
 # Production stage
-FROM node:20-slim
+FROM node:22-slim
 
 # Install runtime and build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -55,50 +55,43 @@ COPY --from=builder /app/server ./server
 # Create directory for database and projects
 RUN mkdir -p /app/data /app/projects
 
-# Create Claude skills directory (will be used by node user)
-RUN mkdir -p /home/node/.claude/skills
+# Create Claude skills directory
+RUN mkdir -p /root/.claude/skills
 
 # Configure Claude Code default settings (bypass for Docker environment)
-RUN mkdir -p /home/node/.claude
-COPY claude-settings/settings.json /home/node/.claude/settings.json
+COPY claude-settings/settings.json /root/.claude/settings.json
 
 # Install skills from repositories
 WORKDIR /tmp
 
 # Clone and install anthropics/skills
 RUN git clone --depth 1 https://github.com/anthropics/skills.git && \
-    cp -r skills/skills/* /home/node/.claude/skills/ && \
+    cp -r skills/skills/* /root/.claude/skills/ && \
     rm -rf skills
 
 # Clone and install ybalbert001/claude-code-aws-skills (includes excalidraw)
 RUN git clone https://github.com/ybalbert001/claude-code-aws-skills.git aws-skills && \
-    cp -r aws-skills/* /home/node/.claude/skills/ && \
+    cp -r aws-skills/* /root/.claude/skills/ && \
     rm -rf aws-skills
 
 # Install Python dependencies for all skills
-RUN find /home/node/.claude/skills -name "requirements.txt" -exec pip3 install --break-system-packages -r {} \; || true
+RUN find /root/.claude/skills -name "requirements.txt" -exec pip3 install --break-system-packages -r {} \; || true
 
 # Install Node dependencies for all skills
-RUN for dir in $(find /home/node/.claude/skills -name "package.json" -type f); do \
+RUN for dir in $(find /root/.claude/skills -name "package.json" -type f); do \
         cd "$(dirname "$dir")" && npm install || true; \
     done
 
 # Install Playwright Chromium for excalidraw PNG export (Python version)
-RUN if [ -d "/home/node/.claude/skills/excalidraw/scripts" ]; then \
+RUN if [ -d "/root/.claude/skills/excalidraw/scripts" ]; then \
         python3 -m playwright install chromium --with-deps || true; \
     fi
 
-# Install Slidev CLI and Playwright globally with shared browser path
+# Install Slidev CLI and Playwright globally for slidev export
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
-RUN npm install -g @slidev/cli && \
-    npm install -g playwright-chromium && \
-    npx playwright install chromium --with-deps && \
-    chmod -R 755 /opt/playwright-browsers
-
-# Install AWS dark theme dependencies for slidev-ppt
-RUN if [ -d "/home/node/.claude/skills/slidev-ppt/themes/aws-dark" ]; then \
-        cd /home/node/.claude/skills/slidev-ppt/themes/aws-dark && npm install || true; \
-    fi
+RUN npm install -g playwright-chromium --force && \
+    npm install -g @slidev/cli@52.10.1 --force && \
+    npx playwright install chromium --with-deps
 
 # Set environment variables for Bedrock
 ENV CLAUDE_CODE_USE_BEDROCK=1
@@ -108,16 +101,11 @@ ENV PORT=3001
 
 WORKDIR /app
 
-# Change ownership of all necessary directories to node user
-RUN chown -R node:node /app && \
-    chown -R node:node /home/node/.claude
+# Set HOME and PATH for root user
+ENV HOME=/root
+ENV PATH="/root/.local/bin:${PATH}"
 
-# Set HOME and PATH for node user
-ENV HOME=/home/node
-ENV PATH="/home/node/.local/bin:${PATH}"
-
-# Switch to node user and install Claude Code
-USER node
+# Install Claude Code
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 EXPOSE 3001
