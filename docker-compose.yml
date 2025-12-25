@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: claude-code-ui-${USERNAME:-default}
-    ports:
-      - "${PORT:-3002}:3001"
+    # Use host network to access EC2 instance metadata service for IAM Role credentials
+    network_mode: host
     environment:
       # Server configuration
       - PORT=3001
@@ -16,6 +16,9 @@ services:
       # AWS Bedrock configuration (automatically set)
       - CLAUDE_CODE_USE_BEDROCK=1
       - AWS_REGION=us-east-1
+
+      # Set HOME for node user
+      - HOME=/home/node
 
       # AWS Credentials (use environment variables or .env file)
       # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -35,7 +38,7 @@ services:
       - DATABASE_PATH=/home/node/${USERNAME:-default}/auth.db
 
       # Workspace configuration (per user)
-      - WORKSPACES_ROOT=/root/workspace
+      - WORKSPACES_ROOT=/app/projects
 
       # Context window
       - CONTEXT_WINDOW=160000
@@ -49,7 +52,7 @@ services:
       - ./data/${USERNAME:-default}:/app/data/${USERNAME:-default}
 
       # Mount user-specific workspace from EC2 local disk to node user home
-      - /home/ubuntu/cc-user/${USERNAME:-default}:/root/workspace
+      - /home/ubuntu/cc-user/${USERNAME:-default}:/app/projects
 
       # Mount host workspace directories (optional)
       - /home/ubuntu:/home/ubuntu
@@ -58,6 +61,7 @@ services:
       # - ~/.aws:/home/node/.aws:ro
 
     # Run as node user (uid=1000, gid=1000) to match host ubuntu user
+    user: "1000:1000"
 
     restart: unless-stopped
     

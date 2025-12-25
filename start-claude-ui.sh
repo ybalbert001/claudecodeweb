@@ -43,6 +43,8 @@ if [ ! -d "$USER_WORKSPACE" ]; then
     print_warning "Creating user workspace directory: $USER_WORKSPACE"
     mkdir -p "$USER_WORKSPACE"
 fi
+# Ensure workspace is accessible (ubuntu uid=1000 matches container node uid=1000)
+chmod 755 "$USER_WORKSPACE"
 
 # Create data directory for user database
 USER_DATA="./data/${USERNAME}"
@@ -50,6 +52,8 @@ if [ ! -d "$USER_DATA" ]; then
     print_warning "Creating user data directory: $USER_DATA"
     mkdir -p "$USER_DATA"
 fi
+# Ensure data directory is writable
+chmod 755 "$USER_DATA"
 
 # Check if AWS credentials are set
 if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
