@@ -80,6 +80,9 @@ RUN git clone https://github.com/ybalbert001/claude-code-aws-skills.git aws-skil
 # Install Python dependencies for all skills
 RUN find /home/node/.claude/skills -name "requirements.txt" -exec pip3 install --break-system-packages -r {} \; || true
 
+# Install Langfuse
+RUN pip3 install --break-system-packages langfuse
+
 # Install Node dependencies for all skills
 RUN for dir in $(find /home/node/.claude/skills -name "package.json" -type f); do \
         cd "$(dirname "$dir")" && npm install || true; \
